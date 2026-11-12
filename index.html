@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>South-Doyle 2-Mile Food Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
+<style>
+body { margin: 0; }
+/* Layout: fixed header band, filter sidebar + full-bleed map; stacks map-over-list on phones. */
+:root {
+  --bg: #f5f4f0;
+  --panel: #ffffff;
+  --fg: #22272e;
+  --muted: #6a7178;
+  --line: #dcdad2;
+  --accent: #163f70;
+  --accent-soft: #e4ebf4;
+  --chip-on: #163f70;
+  --chip-on-fg: #ffffff;
+  --shadow: 0 2px 10px rgba(20, 30, 50, .12);
+  --tile-filter: none;
+  --font-body: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Space Grotesk', 'Inter', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181d; --panel: #1d2127; --fg: #e8e6e1; --muted: #9aa0a6;
+    --line: #333942; --accent: #7ea8d8; --accent-soft: #24303f;
+    --chip-on: #7ea8d8; --chip-on-fg: #10141a;
+    --shadow: 0 2px 10px rgba(0, 0, 0, .5);
+    --tile-filter: brightness(.72) contrast(1.08) saturate(.85);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181d; --panel: #1d2127; --fg: #e8e6e1; --muted: #9aa0a6;
+  --line: #333942; --accent: #7ea8d8; --accent-soft: #24303f;
+  --chip-on: #7ea8d8; --chip-on-fg: #10141a;
+  --shadow: 0 2px 10px rgba(0, 0, 0, .5);
+  --tile-filter: brightness(.72) contrast(1.08) saturate(.85);
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-body); }
+.app { height: 100%; display: flex; flex-direction: column; }
+
+header.band { background: var(--panel); border-bottom: 1px solid var(--line); flex: none; }
+.band-inner {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px;
+}
+h1 { font: 700 19px/1.2 var(--font-head); margin: 0; letter-spacing: -.01em; }
+.sub { color: var(--muted); font-size: 12.5px; }
+.sub b { color: var(--fg); font-weight: 600; }
+
+.main { flex: 1; display: flex; min-height: 0; }
+aside {
+  width: 332px; flex: none; background: var(--panel); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; min-height: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+}
+.filters { padding: 12px 14px 10px 0; border-bottom: 1px solid var(--line); }
+.filters .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.search { width: 100%; box-sizing: border-box; margin-bottom: 9px; padding: 7px 10px;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--fg);
+  font: inherit; }
+.search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.chip { border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+  border-radius: 999px; padding: 4px 11px; font: 500 12px/1.3 var(--font-body); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--chip-on); border-color: var(--chip-on); color: var(--chip-on-fg); }
+.chip:focus-visible, .cat:focus-visible, .place:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px; }
+.cats { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+.cat { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg); border-radius: 999px; padding: 3px 10px 3px 7px;
+  font: 500 12px/1.4 var(--font-body); cursor: pointer; }
+.cat .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-sizing: border-box; }
+.cat .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cat[aria-pressed="false"] { opacity: .42; }
+.catlinks { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.catlinks button { background: none; border: 0; padding: 0; color: var(--accent);
+  font: inherit; cursor: pointer; text-decoration: underline; }
+
+.listwrap { flex: 1; overflow-y: auto; min-height: 0; }
+.listhead { padding: 9px 14px 4px 0; color: var(--muted); font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: .06em; }
+.place { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+  background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--fg);
+  padding: 8px 14px 8px 0; font: inherit; cursor: pointer; }
+.place:hover { background: var(--accent-soft); }
+.place .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; position: relative; top: 0; box-sizing: border-box; }
+.place .nm { font-weight: 600; min-width: 0; }
+.place .meta { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+.place small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+.empty { padding: 18px 14px; color: var(--muted); }
+
+.about { border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); flex: none; }
+.about summary { cursor: pointer; padding: 9px 14px 9px 0; font-weight: 600; color: var(--fg); }
+.about .body { padding: 0 14px 12px 0; }
+.about p { margin: 0 0 7px; }
+.about a { color: var(--accent); }
+
+.mapwrap { flex: 1; min-width: 0; position: relative; }
+#map { position: absolute; inset: 0; background: #d8d4cc; }
+#map .leaflet-tile { filter: var(--tile-filter); }
+
+/* Leaflet chrome follows the theme */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--fg); box-shadow: var(--shadow); }
+.leaflet-popup-content { font: 13px/1.5 var(--font-body); margin: 12px 14px; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-bar a { background: var(--panel); color: var(--fg); border-bottom-color: var(--line); }
+.leaflet-bar a.leaflet-disabled { background: var(--bg); color: var(--line); }
+.leaflet-control-attribution { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--muted); }
+.leaflet-control-attribution a { color: var(--accent); }
+.leaflet-control-scale-line { background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--fg); border-color: var(--muted); }
+.leaflet-container { font-family: var(--font-body); }
+
+.pop-name { font: 600 14px/1.3 var(--font-head); margin-bottom: 2px; }
+.pop-cat { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 6px; }
+.pop-cat .dot { width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box; }
+.pop-row { color: var(--muted); font-size: 12.5px; }
+.pop-evidence { display: inline-block; margin-top: 6px; font-size: 11.5px; border-radius: 5px;
+  padding: 2px 7px; background: var(--accent-soft); color: var(--fg); }
+.pop-evidence.verify { outline: 1px dashed var(--muted); background: transparent; color: var(--muted); }
+.pop-link { margin-top: 7px; font-size: 12px; }
+.pop-link a { color: var(--accent); }
+
+.school-pin { background: var(--accent); border: 2.5px solid #fff; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
+.school-pin span { transform: rotate(45deg); color: #fff; font: 700 12px var(--font-head); }
+
+@media (max-width: 760px) {
+  .app { height: auto; min-height: 100%; }
+  .main { flex-direction: column; }
+  .mapwrap { flex: none; height: 56vh; min-height: 320px; }
+  #map { position: relative; inset: auto; height: 100%; }
+  aside { width: auto; order: 2; border-right: 0; border-top: 1px solid var(--line);
+    padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .mapwrap { order: 1; }
+  .listwrap { max-height: 50vh; }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="band">
+    <div class="band-inner">
+      <h1>South-Doyle 2-Mile Food Map</h1>
+      <span class="sub"><b id="stat-count"></b> OSM food locations within a <b>2-mile straight-line radius</b> of South-Doyle Middle School, Knoxville&nbsp;TN</span>
+    </div>
+  </header>
+  <div class="main">
+    <aside>
+      <div class="filters">
+        <input class="search" id="search" type="search" placeholder="Search by name or address" aria-label="Search places">
+        <div class="row" role="group" aria-label="Evidence filter">
+          <button class="chip" id="ev-food" aria-pressed="true">Solid: OSM food category</button>
+          <button class="chip" id="ev-verify" aria-pressed="true">Hollow: verify food sales</button>
+        </div>
+        <div class="cats" id="cats" role="group" aria-label="Category filter"></div>
+        <div class="catlinks">Categories: <button id="cats-all">all</button> · <button id="cats-none">none</button></div>
+      </div>
+      <div class="listwrap">
+        <div class="listhead" id="listhead"></div>
+        <div id="list"></div>
+      </div>
+      <details class="about">
+        <summary>About this data</summary>
+        <div class="body">
+          <p>Candidate locations from OpenStreetMap, filtered to a 2-mile (3,218.7&nbsp;m) straight-line radius on the WGS84 ellipsoid around a campus reference point at 3900 Decatur Road. This is not travel distance, and the map is not a complete business directory.</p>
+          <p>Solid dots carry an OSM food category; hollow dots (pharmacies, gas stations, dollar stores, bars) are potential food sellers that need verification. No location has been field-checked for current operation.</p>
+          <p>Buildings and areas are placed at the bounding-box center OSM returns, so some positions are approximate. Records flagged as possible duplicates share a name within 40&nbsp;m.</p>
+          <p id="provenance"></p>
+          <p>Data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, ODbL. Basemap tiles rendered by OpenStreetMap, bundled with this page for the study area only (zoom 13–15).</p>
+        </div>
+      </details>
+    </aside>
+    <div class="mapwrap"><div id="map" role="application" aria-label="Map of food locations"></div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const DATA = {"school": {"name": "South-Doyle Middle School", "address": "3900 Decatur Road, Knoxville, TN 37920", "lat": 35.9400547, "lon": -83.8928816}, "radius_miles": 2.0, "circle": [[35.9690628, -83.8928816], [35.9690529, -83.8919475], [35.9690231, -83.891014], [35.9689734, -83.8900818], [35.9689039, -83.8891516], [35.9688146, -83.8882239], [35.9687056, -83.8872994], [35.9685769, -83.8863787], [35.9684287, -83.8854625], [35.968261, -83.8845513], [35.968074, -83.8836459], [35.9678678, -83.8827469], [35.9676426, -83.8818547], [35.9673984, -83.8809702], [35.9671354, -83.8800938], [35.9668539, -83.8792262], [35.9665541, -83.8783679], [35.966236, -83.8775196], [35.9659, -83.8766819], [35.9655463, -83.8758553], [35.9651752, -83.8750403], [35.9647868, -83.8742376], [35.9643814, -83.8734477], [35.9639594, -83.8726711], [35.9635209, -83.8719083], [35.9630664, -83.87116], [35.9625962, -83.8704265], [35.9621104, -83.8697085], [35.9616096, -83.8690064], [35.961094, -83.8683206], [35.9605639, -83.8676517], [35.9600198, -83.867], [35.959462, -83.8663662], [35.9588909, -83.8657505], [35.9583069, -83.8651534], [35.9577104, -83.8645754], [35.9571018, -83.8640167], [35.9564815, -83.8634779], [35.9558499, -83.8629592], [35.9552076, -83.862461], [35.9545548, -83.8619837], [35.9538921, -83.8615276], [35.9532199, -83.861093], [35.9525387, -83.8606801], [35.951849, -83.8602894], [35.9511511, -83.859921], [35.9504457, -83.8595752], [35.9497331, -83.8592523], [35.9490139, -83.8589524], [35.9482886, -83.8586757], [35.9475576, -83.8584225], [35.9468215, -83.8581929], [35.9460808, -83.8579872], [35.9453359, -83.8578053], [35.9445874, -83.8576475], [35.9438358, -83.8575138], [35.9430816, -83.8574044], [35.9423254, -83.8573192], [35.9415676, -83.8572585], [35.9408087, -83.8572222], [35.9400494, -83.8572103], [35.9392901, -83.8572229], [35.9385312, -83.8572599], [35.9377735, -83.8573213], [35.9370173, -83.8574071], [35.9362632, -83.8575172], [35.9355116, -83.8576515], [35.9347633, -83.85781], [35.9340185, -83.8579925], [35.9332779, -83.8581989], [35.9325419, -83.858429], [35.9318111, -83.8586828], [35.9310859, -83.85896], [35.9303668, -83.8592605], [35.9296545, -83.8595839], [35.9289492, -83.8599302], [35.9282516, -83.8602991], [35.927562, -83.8606903], [35.926881, -83.8611035], [35.9262091, -83.8615385], [35.9255466, -83.861995], [35.9248941, -83.8624726], [35.924252, -83.8629711], [35.9236207, -83.86349], [35.9230006, -83.8640291], [35.9223923, -83.864588], [35.921796, -83.8651662], [35.9212123, -83.8657634], [35.9206415, -83.8663791], [35.920084, -83.8670131], [35.9195401, -83.8676647], [35.9190104, -83.8683336], [35.918495, -83.8690193], [35.9179944, -83.8697214], [35.917509, -83.8704393], [35.9170389, -83.8711726], [35.9165847, -83.8719207], [35.9161465, -83.8726832], [35.9157248, -83.8734596], [35.9153197, -83.8742492], [35.9149315, -83.8750516], [35.9145605, -83.8758662], [35.9142071, -83.8766924], [35.9138713, -83.8775298], [35.9135535, -83.8783776], [35.9132538, -83.8792354], [35.9129725, -83.8801025], [35.9127097, -83.8809784], [35.9124657, -83.8818624], [35.9122406, -83.882754], [35.9120345, -83.8836524], [35.9118476, -83.8845573], [35.9116801, -83.8854678], [35.911532, -83.8863834], [35.9114034, -83.8873034], [35.9112945, -83.8882272], [35.9112053, -83.8891543], [35.9111358, -83.8900839], [35.9110862, -83.8910154], [35.9110564, -83.8919482], [35.9110464, -83.8928816], [35.9110564, -83.893815], [35.9110862, -83.8947478], [35.9111358, -83.8956793], [35.9112053, -83.8966089], [35.9112945, -83.897536], [35.9114034, -83.8984598], [35.911532, -83.8993798], [35.9116801, -83.9002954], [35.9118476, -83.9012059], [35.9120345, -83.9021108], [35.9122406, -83.9030092], [35.9124657, -83.9039008], [35.9127097, -83.9047848], [35.9129725, -83.9056607], [35.9132538, -83.9065278], [35.9135535, -83.9073856], [35.9138713, -83.9082334], [35.9142071, -83.9090708], [35.9145605, -83.909897], [35.9149315, -83.9107116], [35.9153197, -83.911514], [35.9157248, -83.9123036], [35.9161465, -83.91308], [35.9165847, -83.9138425], [35.9170389, -83.9145906], [35.917509, -83.9153239], [35.9179944, -83.9160418], [35.918495, -83.9167439], [35.9190104, -83.9174296], [35.9195401, -83.9180985], [35.920084, -83.9187501], [35.9206415, -83.9193841], [35.9212123, -83.9199998], [35.921796, -83.920597], [35.9223923, -83.9211752], [35.9230006, -83.9217341], [35.9236207, -83.9222732], [35.924252, -83.9227921], [35.9248941, -83.9232906], [35.9255466, -83.9237682], [35.9262091, -83.9242247], [35.926881, -83.9246597], [35.927562, -83.9250729], [35.9282516, -83.9254641], [35.9289492, -83.925833], [35.9296545, -83.9261793], [35.9303668, -83.9265027], [35.9310859, -83.9268032], [35.9318111, -83.9270804], [35.9325419, -83.9273342], [35.9332779, -83.9275643], [35.9340185, -83.9277707], [35.9347633, -83.9279532], [35.9355116, -83.9281117], [35.9362632, -83.928246], [35.9370173, -83.9283561], [35.9377735, -83.9284419], [35.9385312, -83.9285033], [35.9392901, -83.9285403], [35.9400494, -83.9285529], [35.9408087, -83.928541], [35.9415676, -83.9285047], [35.9423254, -83.928444], [35.9430816, -83.9283588], [35.9438358, -83.9282494], [35.9445874, -83.9281157], [35.9453359, -83.9279579], [35.9460808, -83.927776], [35.9468215, -83.9275703], [35.9475576, -83.9273407], [35.9482886, -83.9270875], [35.9490139, -83.9268108], [35.9497331, -83.9265109], [35.9504457, -83.926188], [35.9511511, -83.9258422], [35.951849, -83.9254738], [35.9525387, -83.9250831], [35.9532199, -83.9246702], [35.9538921, -83.9242356], [35.9545548, -83.9237795], [35.9552076, -83.9233022], [35.9558499, -83.922804], [35.9564815, -83.9222853], [35.9571018, -83.9217465], [35.9577104, -83.9211878], [35.9583069, -83.9206098], [35.9588909, -83.9200127], [35.959462, -83.919397], [35.9600198, -83.9187632], [35.9605639, -83.9181115], [35.961094, -83.9174426], [35.9616096, -83.9167568], [35.9621104, -83.9160547], [35.9625962, -83.9153367], [35.9630664, -83.9146032], [35.9635209, -83.9138549], [35.9639594, -83.9130921], [35.9643814, -83.9123155], [35.9647868, -83.9115256], [35.9651752, -83.9107229], [35.9655463, -83.9099079], [35.9659, -83.9090813], [35.966236, -83.9082436], [35.9665541, -83.9073953], [35.9668539, -83.906537], [35.9671354, -83.9056694], [35.9673984, -83.904793], [35.9676426, -83.9039085], [35.9678678, -83.9030163], [35.968074, -83.9021173], [35.968261, -83.9012119], [35.9684287, -83.9003007], [35.9685769, -83.8993845], [35.9687056, -83.8984638], [35.9688146, -83.8975393], [35.9689039, -83.8966116], [35.9689734, -83.8956814], [35.9690231, -83.8947492], [35.9690529, -83.8938157], [35.9690628, -83.8928816]], "retrieved_at_utc": "2026-11-08T23:09:03.466481+00:00", "osm_base_timestamp": "2026-07-28T02:16:18Z", "endpoint": "https://overpass.kumi.systems/api/interpreter", "audit": {"raw_elements": 287, "excluded": 83, "missing_coords": 0, "outside_radius": 146, "duplicates": 0, "included": 58}, "places": [{"osm_key": "node/13669319701", "name": "Southside Garage", "category": "Bar / pub", "evidence": "Potential food seller — verify", "address": "1014 Sevier Avenue Southeast, 37920", "distance_miles": 1.464, "lat": 35.9588927, "lon": -83.9049476, "location_method": "mapped point", "opening_hours": "Su 11:00-22:00; Mo 16:00-22:00; Tu-Th 16:00-23:00; Fr 11:00-00:00; Sa 12:00-00:00", "cuisine": ""}, {"osm_key": "node/4675721524", "name": "Trailhead Beer Market", "category": "Bar / pub", "evidence": "Potential food seller — verify", "address": "1317 Island Home Avenue, Knoxville, 37920", "distance_miles": 1.467, "lat": 35.9605224, "lon": -83.9000497, "location_method": "mapped point", "opening_hours": "Mo-Th 15:00-01:00, Fr 15:00-24:00; Sa 13:00-24:00; Su 13:00-20:00", "cuisine": ""}, {"osm_key": "node/13870438001", "name": "Lucky Shot Billiards", "category": "Bar / pub", "evidence": "Potential food seller — verify", "address": "6021 Chapman Highway, 37920", "distance_miles": 1.563, "lat": 35.9209234, "lon": -83.8779247, "location_method": "mapped point", "opening_hours": "Mo-Su 11:00-03:00", "cuisine": "american"}, {"osm_key": "node/8691350071", "name": "South Knox Nutrition", "category": "Beverage retailer", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 1.5, "lat": 35.959782, "lon": -83.9041744, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/13401768285", "name": "Mia Piccola", "category": "Cafe", "evidence": "OSM food tag", "address": "1014 Sevier Avenue Southeast, Knoxville, 37920-1865", "distance_miles": 1.464, "lat": 35.9588621, "lon": -83.9050192, "location_method": "mapped point", "opening_hours": "", "cuisine": "coffee_shop"}, {"osm_key": "way/823181196", "name": "Commonplace", "category": "Cafe", "evidence": "OSM food tag", "address": "6000 Chapman Highway, Knoxville, 37920", "distance_miles": 1.469, "lat": 35.9218555, "lon": -83.8792729, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Fr 07:00-17:00; Sa-Su 08:00-14:00", "cuisine": "coffee_shop"}, {"osm_key": "way/429395059", "name": "Honeybee Coffee", "category": "Cafe", "evidence": "OSM food tag", "address": "700 Sevier Avenue Southeast", "distance_miles": 1.496, "lat": 35.9573632, "lon": -83.9089665, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "coffee_shop"}, {"osm_key": "node/11296204525", "name": "Casey's General Store", "category": "Convenience store", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.828, "lat": 35.930932, "lon": -83.9024827, "location_method": "mapped point", "opening_hours": "", "cuisine": "", "possible_duplicate": "node/11296204524"}, {"osm_key": "node/12509506887", "name": "Weigel's", "category": "Convenience store", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.919, "lat": 35.9379886, "lon": -83.9090751, "location_method": "mapped point", "opening_hours": "", "cuisine": "", "possible_duplicate": "node/11296204538"}, {"osm_key": "node/13116060046", "name": "KenJo Markets", "category": "Convenience store", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 1.092, "lat": 35.9453704, "lon": -83.9112356, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "way/1254703349", "name": "La Michoacana Movil", "category": "Dessert / ice cream", "evidence": "OSM food tag", "address": "2623 Chapman Highway, Knoxville, 37920", "distance_miles": 1.337, "lat": 35.949036, "lon": -83.9140173, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "10:00-22:00", "cuisine": ""}, {"osm_key": "node/12624390601", "name": "Dollar Tree", "category": "Dollar / variety store", "evidence": "Potential food seller — verify", "address": "4409 Chapman Highway, 37902", "distance_miles": 0.859, "lat": 35.9321673, "lon": -83.9047483, "location_method": "mapped point", "opening_hours": "Mo-Sa 09:00-21:00; Su 10:00-21:00", "cuisine": ""}, {"osm_key": "node/11296204532", "name": "Dollar General", "category": "Dollar / variety store", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 0.869, "lat": 35.9362037, "lon": -83.9076386, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/13389632703", "name": "KnoxFill", "category": "Dollar / variety store", "evidence": "Potential food seller — verify", "address": "6204 Chapman Highway, 37920", "distance_miles": 1.637, "lat": 35.9216378, "lon": -83.8744685, "location_method": "mapped point", "opening_hours": "Mo-Sa 10:00-19:00; Su 10:00-17:00", "cuisine": ""}, {"osm_key": "node/11296204533", "name": "Subway", "category": "Fast food", "evidence": "OSM food tag", "address": "4400 Chapman Highway, Knoxville, 37920", "distance_miles": 0.776, "lat": 35.9345537, "lon": -83.9049593, "location_method": "mapped point", "opening_hours": "Mo-Fr 07:00-23:00; Sa 08:00-23:00; Su 09:00-23:00", "cuisine": "sandwich"}, {"osm_key": "way/823181171", "name": "Captain D's", "category": "Fast food", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.8, "lat": 35.9349059, "lon": -83.9056599, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "seafood"}, {"osm_key": "node/11296204523", "name": "Sonic", "category": "Fast food", "evidence": "OSM food tag", "address": "4515 Chapman Highway, Knoxville, 37920", "distance_miles": 0.812, "lat": 35.9319751, "lon": -83.9034129, "location_method": "mapped point", "opening_hours": "Mo-Th 07:00-23:00; Fr-Sa 07:00-24:00; Su 07:00-23:00", "cuisine": "burger"}, {"osm_key": "way/823181162", "name": "Checkers", "category": "Fast food", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.815, "lat": 35.9369243, "lon": -83.9068923, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "burger"}, {"osm_key": "node/12624387401", "name": "Buddy's BBQ", "category": "Fast food", "evidence": "OSM food tag", "address": "4401 Chapman Highway, 37920", "distance_miles": 0.848, "lat": 35.9338555, "lon": -83.905938, "location_method": "mapped point", "opening_hours": "", "cuisine": "barbecue"}, {"osm_key": "node/12271203167", "name": "Wingstop", "category": "Fast food", "evidence": "OSM food tag", "address": "4409 Chapman Highway, 37920", "distance_miles": 0.888, "lat": 35.9320836, "lon": -83.9053281, "location_method": "mapped point", "opening_hours": "Mo-Su 10:00-01:00", "cuisine": "wings"}, {"osm_key": "way/436873492", "name": "Dunkin'", "category": "Fast food", "evidence": "OSM food tag", "address": "2800 Chapman Highway, Knoxville, 37920", "distance_miles": 1.245, "lat": 35.9483077, "lon": -83.9126253, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Th 05:00-21:00; Fr-Sa 05:00-22:00; Su 06:00-21:00", "cuisine": "donut;coffee_shop"}, {"osm_key": "way/436873491", "name": "Bojangles'", "category": "Fast food", "evidence": "OSM food tag", "address": "2714 Chapman Highway, Knoxville, 37920", "distance_miles": 1.273, "lat": 35.9488485, "lon": -83.912841, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "chicken"}, {"osm_key": "way/436873484", "name": "Arby's", "category": "Fast food", "evidence": "OSM food tag", "address": "2819 Chapman Highway, Knoxville, 37920", "distance_miles": 1.277, "lat": 35.9478877, "lon": -83.9135225, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Th 09:30-01:00; Fr-Sa 09:30-01:30; Su 09:30-01:00", "cuisine": "sandwich"}, {"osm_key": "way/822997719", "name": "McDonald's", "category": "Fast food", "evidence": "OSM food tag", "address": "2505 Chapman Highway, Knoxville, 37920", "distance_miles": 1.42, "lat": 35.9505454, "lon": -83.9146846, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Sa 05:00-23:00; Su 06:00-23:00", "cuisine": "burger"}, {"osm_key": "way/822997717", "name": "Wendy's", "category": "Fast food", "evidence": "OSM food tag", "address": "2401 Chapman Highway, Knoxville, 37920", "distance_miles": 1.456, "lat": 35.9510714, "lon": -83.9150393, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "09:00-22:00", "cuisine": "burger"}, {"osm_key": "way/823183860", "name": "Taco Bell", "category": "Fast food", "evidence": "OSM food tag", "address": "6504 Chapman Highway, Knoxville, 37920", "distance_miles": 1.969, "lat": 35.9215902, "lon": -83.8660925, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Th 08:00-01:00; Fr-Sa 08:00-02:00; Su 08:00-01:00", "cuisine": "tex-mex"}, {"osm_key": "way/807214415", "name": "Kern's Bakery", "category": "Food court", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 1.533, "lat": 35.9534704, "lon": -83.9146827, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/11296204524", "name": "Casey's General Store", "category": "Gas station", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 0.814, "lat": 35.9310759, "lon": -83.9023134, "location_method": "mapped point", "opening_hours": "", "cuisine": "", "possible_duplicate": "node/11296204525"}, {"osm_key": "node/11296204526", "name": "Kroger", "category": "Gas station", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 0.834, "lat": 35.9332723, "lon": -83.9051981, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/11296204529", "name": "Mapco", "category": "Gas station", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 0.841, "lat": 35.9345222, "lon": -83.9062559, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/11296204538", "name": "Weigel's", "category": "Gas station", "evidence": "Potential food seller — verify", "address": "Address not mapped in OSM", "distance_miles": 0.901, "lat": 35.9381006, "lon": -83.9087677, "location_method": "mapped point", "opening_hours": "", "cuisine": "", "possible_duplicate": "node/12509506887"}, {"osm_key": "way/823108778", "name": "Shell", "category": "Gas station", "evidence": "Potential food seller — verify", "address": "3120 Chapman Highway, Knoxville, 37920", "distance_miles": 1.099, "lat": 35.9453167, "lon": -83.9113828, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/12714138601", "name": "Knox Fill", "category": "Grocery store", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.709, "lat": 35.9495429, "lon": -83.8880109, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/11296204530", "name": "United Grocery Outlet", "category": "Grocery store", "evidence": "OSM food tag", "address": "4225 Chapman Highway, 37920", "distance_miles": 0.876, "lat": 35.9348145, "lon": -83.9071166, "location_method": "mapped point", "opening_hours": "Mo-Sa 08:00-21:00; Su 08:00-19:00", "cuisine": ""}, {"osm_key": "node/10717923105", "name": "Kroger", "category": "Grocery store", "evidence": "OSM food tag", "address": "4409 Chapman Highway, Knoxville, 37920", "distance_miles": 0.898, "lat": 35.9327999, "lon": -83.9061909, "location_method": "mapped point", "opening_hours": "Mo-Su 07:00-23:00", "cuisine": ""}, {"osm_key": "way/823133903", "name": "Walgreens", "category": "Pharmacy / drugstore", "evidence": "Potential food seller — verify", "address": "4001 Chapman Highway, 37920", "distance_miles": 0.903, "lat": 35.9371664, "lon": -83.9085846, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "24/7", "cuisine": ""}, {"osm_key": "node/4926953780", "name": "SonKno taco", "category": "Restaurant", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.355, "lat": 35.9448044, "lon": -83.8904384, "location_method": "mapped point", "opening_hours": "", "cuisine": "mexican"}, {"osm_key": "node/12624388502", "name": "Cancun", "category": "Restaurant", "evidence": "OSM food tag", "address": "4409 Chapman Highway, 37920", "distance_miles": 0.886, "lat": 35.9320448, "lon": -83.905243, "location_method": "mapped point", "opening_hours": "", "cuisine": "mexican"}, {"osm_key": "node/12700512501", "name": "Yummy Yummy Teriyaki Express", "category": "Restaurant", "evidence": "OSM food tag", "address": "4409 Chapman Highway, 37920", "distance_miles": 0.902, "lat": 35.933169, "lon": -83.9065634, "location_method": "mapped point", "opening_hours": "Tu-Sa 11:00-21:30", "cuisine": "chinese"}, {"osm_key": "way/265959768", "name": "Aretha Frankensteins", "category": "Restaurant", "evidence": "OSM food tag", "address": "3318 Chapman Highway, Knoxville, 37920", "distance_miles": 1.026, "lat": 35.9433402, "lon": -83.9107281, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Fr 07:30-14:00; Sa-Su 07:30-15:00", "cuisine": ""}, {"osm_key": "way/822997722", "name": "Shoney's", "category": "Restaurant", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 1.321, "lat": 35.9496171, "lon": -83.9132991, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "american"}, {"osm_key": "way/1254703348", "name": "La Bamba Seafood", "category": "Restaurant", "evidence": "OSM food tag", "address": "2619 Chapman Highway, Knoxville, 37920", "distance_miles": 1.346, "lat": 35.9490814, "lon": -83.9141606, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Su-Mo, Th 11:00-22:00; Fr-Sa 11:00-23:00", "cuisine": "seafood"}, {"osm_key": "way/1254703350", "name": "Las Fuentes", "category": "Restaurant", "evidence": "OSM food tag", "address": "2525 Chapman Highway, Knoxville, 37920", "distance_miles": 1.405, "lat": 35.949984, "lon": -83.9147688, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Su 11:00-21:00", "cuisine": "mexican"}, {"osm_key": "way/822997718", "name": "Pizza Hut", "category": "Restaurant", "evidence": "OSM food tag", "address": "2405 Chapman Highway, Knoxville, 37920", "distance_miles": 1.443, "lat": 35.9509051, "lon": -83.9148941, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "", "cuisine": "pizza"}, {"osm_key": "node/8691285808", "name": "Sevier Ave Burger Company", "category": "Restaurant", "evidence": "OSM food tag", "address": "1120 Sevier Avenue Southeast, 37920", "distance_miles": 1.459, "lat": 35.9593089, "lon": -83.9036719, "location_method": "mapped point", "opening_hours": "Su-Th 11:00-22:00; Fr-Sa 11:00-22:00", "cuisine": "burger"}, {"osm_key": "node/13166342901", "name": "South Coast Pizza", "category": "Restaurant", "evidence": "OSM food tag", "address": "1103 Sevier Avenue Southeast, 37920", "distance_miles": 1.483, "lat": 35.9593412, "lon": -83.9045787, "location_method": "mapped point", "opening_hours": "Su-Th 11:00-22:00; Fr-Sa 11:00-23:00", "cuisine": "chicken;pizza"}, {"osm_key": "node/9203548817", "name": "Landing House", "category": "Restaurant", "evidence": "OSM food tag", "address": "1147 Sevier Avenue Southeast", "distance_miles": 1.495, "lat": 35.9601544, "lon": -83.9028839, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/13188996076", "name": "Kerns Food Hall", "category": "Restaurant", "evidence": "OSM food tag", "address": "2201 Kern's Rising Way, Knoxville, 37920", "distance_miles": 1.536, "lat": 35.9535445, "lon": -83.9146938, "location_method": "mapped point", "opening_hours": "Mo-Th 07:00-21:00, Fr 07:00-22:00, Sa 08:00-22:00, Su 10:00-21:00", "cuisine": "burger;chicken;sushi;indian;korean;pizza;donut;coffee_shop;bubble_tea;ice_cream;grill"}, {"osm_key": "node/13870442901", "name": "Thai Time Knoxville", "category": "Restaurant", "evidence": "OSM food tag", "address": "6200 Chapman Highway, 37920", "distance_miles": 1.632, "lat": 35.9215481, "lon": -83.874739, "location_method": "mapped point", "opening_hours": "Tu-Fr 11:00-19:45; Sa 12:00-19:45", "cuisine": "thai"}, {"osm_key": "node/13591479602", "name": "Mimosa's", "category": "Restaurant", "evidence": "OSM food tag", "address": "115 Mimosa Avenue Southeast, 37920", "distance_miles": 1.633, "lat": 35.9543655, "lon": -83.9160918, "location_method": "mapped point", "opening_hours": "Mo-Th 10:00-21:00; Fr 10:00-22:00; Sa 09:00-22:00; Su 09:00-21:00", "cuisine": ""}, {"osm_key": "node/2123265853", "name": "Tennessee Riverboat", "category": "Restaurant", "evidence": "OSM food tag", "address": "300 Neyland Drive, Knoxville, 37902", "distance_miles": 1.789, "lat": 35.959919, "lon": -83.913417, "location_method": "mapped point", "opening_hours": "Mo-Sa 10:00-16:00", "cuisine": ""}, {"osm_key": "way/1187510743", "name": "Ruth's Chris Steak House", "category": "Restaurant", "evidence": "OSM food tag", "address": "950 Volunteer Landing Lane, Knoxville, 37915", "distance_miles": 1.824, "lat": 35.9611404, "lon": -83.91253, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Mo-Th 16:00-22:00; Fr-Sa 16:00-22:30; Su 16:00-21:00", "cuisine": "american;steak_house"}, {"osm_key": "node/8873238099", "name": "Calhoun’s on the River", "category": "Restaurant", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 1.836, "lat": 35.9591257, "lon": -83.9157272, "location_method": "mapped point", "opening_hours": "Mo-Sa 11:00-23:00; Su 11:00-22:00", "cuisine": "american", "possible_duplicate": "way/295186889"}, {"osm_key": "way/295186889", "name": "Calhoun’s on the River", "category": "Restaurant", "evidence": "OSM food tag", "address": "400 Neyland Drive, 37902", "distance_miles": 1.84, "lat": 35.9591796, "lon": -83.9157669, "location_method": "OSM bounding-box center (approximate)", "opening_hours": "Su-Th 11:00-22:00; Fr-Sa 11:00-23:00", "cuisine": "barbecue;american", "possible_duplicate": "node/8873238099"}, {"osm_key": "node/6561488324", "name": "IDK Foods Crab Shack and More", "category": "Restaurant", "evidence": "OSM food tag", "address": "6409 Chapman Highway, Knoxville", "distance_miles": 1.874, "lat": 35.920976, "lon": -83.8690773, "location_method": "mapped point", "opening_hours": "Tu-Su 11:00-17:00, 18:00-21:00", "cuisine": "fish_and_chips"}, {"osm_key": "node/12628754601", "name": "South Press", "category": "Specialty food", "evidence": "OSM food tag", "address": "Address not mapped in OSM", "distance_miles": 0.988, "lat": 35.940658, "lon": -83.9104882, "location_method": "mapped point", "opening_hours": "Tu-Sa 08:00-18:00", "cuisine": ""}, {"osm_key": "node/13870437802", "name": "The Village Bakery", "category": "Specialty food", "evidence": "OSM food tag", "address": "6202 Chapman Highway, 37920", "distance_miles": 1.634, "lat": 35.9216057, "lon": -83.8745977, "location_method": "mapped point", "opening_hours": "", "cuisine": ""}, {"osm_key": "node/12623082901", "name": "European Bakery & Cafe", "category": "Specialty food", "evidence": "OSM food tag", "address": "6502 Chapman Highway, 37920", "distance_miles": 1.87, "lat": 35.9227477, "lon": -83.8672138, "location_method": "mapped point", "opening_hours": "Tu-Sa 08:00-14:00", "cuisine": ""}]};
+
+const CAT_COLORS = {
+  "Restaurant": "#d64545",
+  "Fast food": "#c17a1a",
+  "Cafe": "#8c6239",
+  "Dessert / ice cream": "#c95d9a",
+  "Food court": "#934a73",
+  "Grocery store": "#26734d",
+  "Convenience store": "#4f9e5f",
+  "Specialty food": "#347d80",
+  "Gas station": "#8f8f23",
+  "Pharmacy / drugstore": "#1e739e",
+  "Dollar / variety store": "#6554a4",
+  "Beverage retailer": "#4a69bd",
+  "Bar / pub": "#9b4a2f"
+};
+const catColor = c => CAT_COLORS[c] || "#666666";
+const FOOD_EV = "OSM food tag";
+
+// ---- State ----
+const counts = {};
+DATA.places.forEach(p => { counts[p.category] = (counts[p.category] || 0) + 1; });
+const categories = Object.keys(counts).sort();
+const state = {
+  cats: new Set(categories),
+  evFood: true, evVerify: true,
+  q: ""
+};
+
+// ---- Map ----
+const school = DATA.school;
+const map = L.map("map", {
+  minZoom: 13, maxZoom: 17, zoomSnap: 0.5,
+  maxBounds: [[35.883, -83.985], [35.998, -83.800]],
+  maxBoundsViscosity: 0.8
+});
+L.tileLayer("tiles/{z}/{x}/{y}.png", {
+  minZoom: 13, maxZoom: 17, maxNativeZoom: 15,
+  attribution: "© <a href='https://www.openstreetmap.org/copyright' target='_blank' rel='noopener'>OpenStreetMap</a> contributors"
+}).addTo(map);
+L.control.scale({ imperial: true }).addTo(map);
+
+const ring = L.polygon(DATA.circle, {
+  color: "#163f70", weight: 2.5, fill: true, fillOpacity: 0.03, interactive: false
+}).addTo(map);
+map.fitBounds(ring.getBounds().pad(0.04));
+
+const schoolIcon = L.divIcon({
+  className: "", iconSize: [30, 30], iconAnchor: [15, 28], popupAnchor: [0, -26],
+  html: '<div class="school-pin" style="width:30px;height:30px"><span>S·D</span></div>'
+});
+L.marker([school.lat, school.lon], { icon: schoolIcon, zIndexOffset: 1000 })
+  .addTo(map)
+  .bindPopup(`<div class="pop-name">${school.name}</div><div class="pop-row">${school.address}</div><div class="pop-row">Center of the 2-mile study radius (campus reference point)</div>`);
+
+// ---- Markers ----
+const esc = s => String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+function popupHtml(p) {
+  const confirmed = p.evidence === FOOD_EV;
+  let h = `<div class="pop-name">${esc(p.name)}</div>`;
+  h += `<div class="pop-cat"><span class="dot" style="background:${catColor(p.category)}"></span>${esc(p.category)}${p.cuisine ? " · " + esc(p.cuisine.replace(/[;_]/g, " ")) : ""}</div>`;
+  h += `<div class="pop-row">${esc(p.address)}</div>`;
+  h += `<div class="pop-row">${p.distance_miles.toFixed(2)} mi straight line · ${esc(p.location_method)}</div>`;
+  if (p.opening_hours) h += `<div class="pop-row">Hours: ${esc(p.opening_hours)}</div>`;
+  if (p.possible_duplicate) h += `<div class="pop-row">Possible duplicate of ${esc(p.possible_duplicate)}</div>`;
+  h += `<span class="pop-evidence${confirmed ? "" : " verify"}">${confirmed ? "OSM food category" : "Potential food seller — verify"}</span>`;
+  h += `<div class="pop-link"><a href="https://www.openstreetmap.org/${esc(p.osm_key)}" target="_blank" rel="noopener">View source in OpenStreetMap</a></div>`;
+  return h;
+}
+DATA.places.forEach(p => {
+  const confirmed = p.evidence === FOOD_EV;
+  p._marker = L.circleMarker([p.lat, p.lon], {
+    radius: 7, color: catColor(p.category), weight: 2.25,
+    fill: true, fillColor: catColor(p.category), fillOpacity: confirmed ? 0.85 : 0.15
+  }).bindPopup(popupHtml(p), { maxWidth: 300 })
+    .bindTooltip(`${p.name} · ${p.category}`);
+});
+
+// ---- Filtering ----
+function visible(p) {
+  if (!state.cats.has(p.category)) return false;
+  const confirmed = p.evidence === FOOD_EV;
+  if (confirmed && !state.evFood) return false;
+  if (!confirmed && !state.evVerify) return false;
+  if (state.q && !(p.name + " " + p.address).toLowerCase().includes(state.q)) return false;
+  return true;
+}
+const listEl = document.getElementById("list");
+const listHead = document.getElementById("listhead");
+function render() {
+  const shown = DATA.places.filter(visible).sort((a, b) => a.distance_miles - b.distance_miles);
+  DATA.places.forEach(p => {
+    const on = shown.includes(p);
+    if (on && !map.hasLayer(p._marker)) p._marker.addTo(map);
+    if (!on && map.hasLayer(p._marker)) map.removeLayer(p._marker);
+  });
+  document.getElementById("stat-count").textContent = DATA.places.length;
+  listHead.textContent = `${shown.length} of ${DATA.places.length} locations · nearest first`;
+  listEl.textContent = "";
+  if (!shown.length) {
+    const d = document.createElement("div");
+    d.className = "empty"; d.textContent = "Nothing matches the current filters.";
+    listEl.appendChild(d);
+    return;
+  }
+  shown.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "place";
+    const confirmed = p.evidence === FOOD_EV;
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.background = confirmed ? catColor(p.category) : "transparent";
+    dot.style.border = `2px solid ${catColor(p.category)}`;
+    const nm = document.createElement("span");
+    nm.className = "nm"; nm.textContent = p.name;
+    const sm = document.createElement("small");
+    sm.textContent = p.category + (p.address !== "Address not mapped in OSM" ? " · " + p.address.split(",")[0] : "");
+    nm.appendChild(sm);
+    const meta = document.createElement("span");
+    meta.className = "meta"; meta.textContent = p.distance_miles.toFixed(2) + " mi";
+    b.append(dot, nm, meta);
+    b.addEventListener("click", () => {
+      map.setView([p.lat, p.lon], Math.max(map.getZoom(), 16));
+      p._marker.openPopup();
+      if (window.matchMedia("(max-width: 760px)").matches)
+        document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    listEl.appendChild(b);
+  });
+}
+
+// ---- Controls ----
+const catsEl = document.getElementById("cats");
+categories.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "cat"; b.setAttribute("aria-pressed", "true"); b.id = "cat-" + c.replace(/\W+/g, "-");
+  const dot = document.createElement("span");
+  dot.className = "dot"; dot.style.background = catColor(c);
+  const n = document.createElement("span");
+  n.className = "n"; n.textContent = counts[c];
+  b.append(dot, document.createTextNode(c + " "), n);
+  b.addEventListener("click", () => {
+    state.cats.has(c) ? state.cats.delete(c) : state.cats.add(c);
+    b.setAttribute("aria-pressed", state.cats.has(c));
+    render();
+  });
+  catsEl.appendChild(b);
+});
+document.getElementById("cats-all").addEventListener("click", () => {
+  state.cats = new Set(categories);
+  catsEl.querySelectorAll(".cat").forEach(b => b.setAttribute("aria-pressed", "true"));
+  render();
+});
+document.getElementById("cats-none").addEventListener("click", () => {
+  state.cats.clear();
+  catsEl.querySelectorAll(".cat").forEach(b => b.setAttribute("aria-pressed", "false"));
+  render();
+});
+[["ev-food", "evFood"], ["ev-verify", "evVerify"]].forEach(([id, key]) => {
+  const b = document.getElementById(id);
+  b.addEventListener("click", () => {
+    state[key] = !state[key];
+    b.setAttribute("aria-pressed", state[key]);
+    render();
+  });
+});
+document.getElementById("search").addEventListener("input", e => {
+  state.q = e.target.value.trim().toLowerCase();
+  render();
+});
+
+// ---- Provenance ----
+const retrieved = (DATA.retrieved_at_utc || "").slice(0, 10);
+const base = (DATA.osm_base_timestamp || "").slice(0, 10);
+document.getElementById("provenance").textContent =
+  `Snapshot retrieved ${retrieved} from ${DATA.endpoint || "Overpass API"}; underlying OSM data as of ${base}. ` +
+  `Of ${DATA.audit.raw_elements} raw OSM records, ${DATA.audit.included} were classified as food-related and inside the radius.`;
+
+render();
+// Mobile map sits in normal flow; make sure Leaflet measures it after layout.
+setTimeout(() => map.invalidateSize(), 0);
+</script>
+
+</body>
+</html>
